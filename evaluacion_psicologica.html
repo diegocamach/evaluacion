@@ -376,8 +376,8 @@ async function getFlowToken() {
 // POWER AUTOMATE — CONFIGURACIÓN
 // ═══════════════════════════════════════
 const SP_SITE = 'https://netorgft13019324.sharepoint.com/sites/Evaluacion';
-const SP_LIST = 'Respuestas Escalas';
-const SP_URL  = `${SP_SITE}/_api/web/lists/getbytitle('${SP_LIST}')/items`;
+const SP_LIST_GUID = 'fa3a0230-8526-4cd2-80d5-f12d1f0d9759';
+const SP_URL  = `${SP_SITE}/_api/web/lists(guid'${SP_LIST_GUID}')/items`;
 
 // ═══════════════════════════════════════
 // ESTADO GLOBAL
@@ -909,27 +909,14 @@ async function enviarASharePoint(scoreData) {
   try {
     const token = await getFlowToken();
 
-    // Obtener form digest
-    const ctxResp = await fetch(`${SP_SITE}/_api/contextinfo`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json;odata=verbose',
-        'Content-Type': 'application/json;odata=verbose',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    if (!ctxResp.ok) throw new Error('No se pudo obtener contextinfo');
-    const ctxData = await ctxResp.json();
-    const digest = ctxData.d.GetContextWebInformation.FormDigestValue;
-
-    // Escribir en la lista
+    // Escribir en la lista (Bearer token no requiere X-RequestDigest)
     const resp = await fetch(SP_URL, {
       method: 'POST',
       headers: {
         'Accept': 'application/json;odata=verbose',
         'Content-Type': 'application/json;odata=verbose',
         'Authorization': `Bearer ${token}`,
-        'X-RequestDigest': digest
+        'X-HTTP-Method': 'POST'
       },
       body: JSON.stringify(item)
     });
