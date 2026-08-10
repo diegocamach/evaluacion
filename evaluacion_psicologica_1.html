@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluación Psicológica</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --azul:#1B3A5C;--azul2:#152e4a;
+  --teal:#2A9D8F;--teal-light:#E8F5F3;--teal2:#238a7d;
+  --gris:#F7F8FA;--borde:#E2E8F0;
+  --texto:#2D3748;--suave:#718096;
+  --blanco:#fff;--error:#E53E3E;
+  --sombra:0 4px 24px rgba(27,58,92,0.09);
+}
+body{font-family:'Inter',sans-serif;background:var(--gris);color:var(--texto);min-height:100vh;display:flex;flex-direction:column}
+
+/* HEADER */
+header{background:var(--azul);padding:18px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.hlogo{width:38px;height:38px;background:var(--teal);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hlogo svg{width:20px;height:20px;fill:white}
+.htxt h1{color:white;font-size:16px;font-weight:700}
+.htxt p{color:rgba(255,255,255,.55);font-size:11px;margin-top:1px}
+
+/* MAIN */
+main{flex:1;max-width:680px;width:100%;margin:0 auto;padding:28px 14px 64px}
+
+/* SECCIONES */
+.sec{display:none;animation:fi .32s ease}
+.sec.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARD */
+.card{background:var(--blanco);border-radius:16px;padding:28px;box-shadow:var(--sombra);margin-bottom:18px}
+.ctag{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);margin-bottom:5px}
+.ctit{font-size:21px;font-weight:800;color:var(--azul);margin-bottom:5px}
+.cdesc{font-size:13px;color:var(--suave);line-height:1.6;margin-bottom:24px}
+
+/* CAMPOS */
+.fg{margin-bottom:18px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:480px){.frow{grid-template-columns:1fr}}
+label{display:block;font-size:11px;font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+label .req{color:var(--teal)}
+input,select{width:100%;padding:10px 13px;border:1.5px solid var(--borde);border-radius:10px;font-family:'Inter',sans-serif;font-size:14px;color:var(--texto);background:var(--blanco);transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(42,157,143,.12)}
+input.err,select.err{border-color:var(--error)}
+.sw{position:relative}
+.sw::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--suave);pointer-events:none;font-size:12px}
+.merr{font-size:11px;color:var(--error);margin-top:3px;display:none}
+.merr.on{display:block}
+
+/* BOTONES */
+.btn{width:100%;padding:13px;border-radius:11px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;border:none;margin-top:6px}
+.btn-p{background:var(--azul);color:white}
+.btn-p:hover{background:var(--azul2)}
+.btn-s{background:var(--blanco);color:var(--azul);border:1.5px solid var(--borde)}
+.btn-s:hover{border-color:var(--azul)}
+.btn-t{background:var(--teal);color:white}
+.btn-t:hover{background:var(--teal2)}
+
+/* ESCALAS GRID */
+.egrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+@media(max-width:480px){.egrid{grid-template-columns:1fr}}
+.ecard{border:1.5px solid var(--borde);border-radius:13px;padding:18px;cursor:pointer;transition:all .2s;background:var(--blanco);text-align:left;position:relative;overflow:hidden}
+.ecard::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--teal);transform:scaleY(0);transform-origin:bottom;transition:transform .2s}
+.ecard:hover{border-color:var(--teal);box-shadow:0 4px 16px rgba(42,157,143,.12);transform:translateY(-2px)}
+.ecard:hover::before{transform:scaleY(1)}
+.ecard.disabled{opacity:.5;cursor:default;pointer-events:none}
+.esigla{font-size:20px;font-weight:800;color:var(--azul);margin-bottom:3px}
+.enombre{font-size:11px;color:var(--suave);font-weight:500;line-height:1.4;margin-bottom:9px}
+.ebadge{display:inline-block;background:var(--teal-light);color:var(--teal);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.ebadge.prox{background:#f0f4f8;color:#a0aec0}
+
+/* PROGRESO */
+.pwrap{margin-bottom:22px}
+.pinfo{display:flex;justify-content:space-between;font-size:12px;color:var(--suave);margin-bottom:7px}
+.pbarra{height:5px;background:var(--borde);border-radius:10px;overflow:hidden}
+.pfill{height:100%;background:var(--teal);border-radius:10px;transition:width .4s ease}
+
+/* ÍTEMS */
+.item{border:1.5px solid var(--borde);border-radius:13px;padding:18px;margin-bottom:12px;transition:border-color .2s}
+.item.ok{border-color:var(--teal)}
+.inum{font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.itxt{font-size:14px;font-weight:600;color:var(--azul);margin-bottom:13px;line-height:1.5}
+.ops{display:flex;flex-direction:column;gap:7px}
+.op{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1.5px solid var(--borde);border-radius:9px;cursor:pointer;transition:all .15s;font-size:13px;color:var(--texto);background:var(--blanco);text-align:left;width:100%}
+.op:hover{border-color:var(--teal);background:var(--teal-light)}
+.op.sel{border-color:var(--teal);background:var(--teal-light);color:var(--azul);font-weight:600}
+.odot{width:15px;height:15px;border-radius:50%;border:2px solid var(--borde);flex-shrink:0;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.op.sel .odot{background:var(--teal);border-color:var(--teal)}
+.op.sel .odot::after{content:'';width:5px;height:5px;border-radius:50%;background:white}
+.oval{font-size:10px;font-weight:700;color:var(--suave);margin-left:auto;flex-shrink:0}
+.op.sel .oval{color:var(--teal)}
+
+/* NAV ESCALA */
+.nav{display:flex;gap:10px;margin-top:6px}
+.nav .btn-s{flex:1}
+.nav .btn-p{flex:2}
+
+/* INSTRUCCIONES */
+.ibox{background:var(--gris);border-radius:11px;padding:14px 18px;margin-bottom:22px;font-size:13px;color:var(--suave);line-height:1.6}
+.ibox strong{color:var(--texto)}
+
+/* RESULTADO */
+.rico{width:68px;height:68px;background:var(--teal-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.rico svg{width:34px;height:34px}
+.rtit{text-align:center;font-size:22px;font-weight:800;color:var(--azul);margin-bottom:6px}
+.rdesc{text-align:center;font-size:13px;color:var(--suave);line-height:1.6;margin-bottom:24px}
+.rres{background:var(--teal-light);border-radius:13px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:18px}
+.rscore{font-size:44px;font-weight:800;color:var(--azul);line-height:1;flex-shrink:0}
+.rnivel{font-size:15px;font-weight:700;color:var(--azul);margin-bottom:3px}
+.rdesc2{font-size:12px;color:var(--suave);line-height:1.5}
+
+/* AVISO */
+.aviso{background:#FFF8E7;border:1px solid #F6D860;border-radius:9px;padding:11px 15px;font-size:12px;color:#7A5F00;line-height:1.5;margin-top:14px}
+
+footer{text-align:center;padding:18px;font-size:11px;color:var(--suave)}
+</style>
+<!-- MSAL.js para autenticación Microsoft -->
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="hlogo">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H8v-2h4v2zm4-4H8v-2h8v2zm0-4H8V7h8v2z"/></svg>
+  </div>
+  <div class="htxt">
+    <h1>Evaluación Psicológica</h1>
+    <p>Sistema de aplicación de instrumentos clínicos</p>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════ DATOS ═══════ -->
+<div class="sec on" id="s-datos">
+  <div class="card">
+    <div class="ctag">Paso 1 de 2</div>
+    <div class="ctit">Datos del paciente</div>
+    <div class="cdesc">Completa la siguiente información antes de iniciar. Todos los datos son estrictamente confidenciales.</div>
+
+    <div class="fg">
+      <div class="frow">
+        <div>
+          <label>Nombre completo <span class="req">*</span></label>
+          <input type="text" id="nombre" placeholder="Ej. Ana García López">
+          <div class="merr" id="e-nombre">Campo requerido</div>
+        </div>
+        <div>
+          <label>Fecha de aplicación <span class="req">*</span></label>
+          <input type="date" id="fecha">
+          <div class="merr" id="e-fecha">Campo requerido</div>
+        </div>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="frow">
+        <div>
+          <label>Edad <span class="req">*</span></label>
+          <input type="number" id="edad" placeholder="Ej. 34" min="10" max="99">
+          <div class="merr" id="e-edad">Ingresa una edad válida</div>
+        </div>
+        <div>
+          <label>Sexo <span class="req">*</span></label>
+          <div class="sw"><select id="sexo"><option value="">Seleccionar…</option><option>Masculino</option><option>Femenino</option><option>Otro</option><option>Prefiero no decir</option></select></div>
+          <div class="merr" id="e-sexo">Selecciona una opción</div>
+        </div>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="frow">
+        <div>
+          <label>Estado civil</label>
+          <div class="sw"><select id="ecivil"><option value="">Seleccionar…</option><option>Soltero(a)</option><option>Casado(a)</option><option>Unión libre</option><option>Divorciado(a)</option><option>Viudo(a)</option></select></div>
+        </div>
+        <div>
+          <label>Escolaridad</label>
+          <div class="sw"><select id="escola"><option value="">Seleccionar…</option><option>Primaria</option><option>Secundaria</option><option>Preparatoria</option><option>Licenciatura</option><option>Maestría</option><option>Doctorado</option><option>Otro</option></select></div>
+        </div>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Profesión / Ocupación</label>
+      <input type="text" id="prof" placeholder="Ej. Ingeniero, Estudiante…">
+    </div>
+    <div class="fg" id="fg-empresa" style="display:none">
+      <label>Empresa / Centro</label>
+      <input type="text" id="empresa" placeholder="Ej. AAM, Clínica…">
+    </div>
+
+    <button class="btn btn-p" onclick="irEscalas()">Continuar →</button>
+    <div class="aviso">🔒 Información confidencial utilizada únicamente con fines clínicos.</div>
+  </div>
+</div>
+
+<!-- ═══════ ESCALAS ═══════ -->
+<div class="sec" id="s-escalas">
+  <div class="card">
+    <div class="ctag">Paso 2 de 2</div>
+    <div class="ctit">Selecciona la evaluación</div>
+    <div class="cdesc">Tu psicólogo te indicará cuál instrumento completar. Selecciónalo para comenzar.</div>
+    <div class="egrid">
+      <button class="ecard" onclick="iniciar('bai')"><div class="esigla">BAI</div><div class="enombre">Inventario de Ansiedad de Beck</div><div class="ebadge">21 ítems · ~5 min</div></button>
+      <button class="ecard" onclick="iniciar('bdi')"><div class="esigla">BDI-II</div><div class="enombre">Inventario de Depresión de Beck</div><div class="ebadge">21 ítems · ~5 min</div></button>
+      <button class="ecard" onclick="iniciar('ocir')"><div class="esigla">OCI-R</div><div class="enombre">Inventario de Obsesiones y Compulsiones</div><div class="ebadge">18 ítems · ~5 min</div></button>
+      <button class="ecard" onclick="iniciar('audit')"><div class="esigla">AUDIT</div><div class="enombre">Prueba de Identificación de Alcohol</div><div class="ebadge">10 ítems · ~3 min</div></button>
+      <button class="ecard" onclick="iniciar('asrs')"><div class="esigla">ASRS</div><div class="enombre">Auto-Reporte de Síntomas de TDAH</div><div class="ebadge">18 ítems · ~5 min</div></button>
+      <button class="ecard" onclick="iniciar('psqi')"><div class="esigla">PSQI</div><div class="enombre">Índice de Calidad de Sueño de Pittsburgh</div><div class="ebadge">9 ítems · ~4 min</div></button>
+      <button class="ecard" onclick="iniciar('cesqt')"><div class="esigla">CESQT</div><div class="enombre">Cuestionario de Síndrome de Quemarse por el Trabajo</div><div class="ebadge">20 ítems · ~5 min</div></button>
+      <button class="ecard" onclick="iniciar('ders')"><div class="esigla">DERS</div><div class="enombre">Dificultades en la Regulación Emocional</div><div class="ebadge">36 ítems · ~8 min</div></button>
+    </div>
+    <div style="margin-top:16px"><button class="btn btn-s" onclick="mostrar('s-datos')">← Editar datos personales</button></div>
+  </div>
+</div>
+
+<!-- ═══════ ESCALA ACTIVA ═══════ -->
+<div class="sec" id="s-escala">
+  <div class="card">
+    <div class="pwrap">
+      <div class="pinfo"><span id="p-label">Ítems 1–7</span><span id="p-pct">0%</span></div>
+      <div class="pbarra"><div class="pfill" id="p-fill" style="width:0%"></div></div>
+    </div>
+    <div class="ctag" id="e-tag">BAI · Bloque 1 de 3</div>
+    <div class="ctit" id="e-tit">Inventario de Ansiedad de Beck</div>
+    <div class="ibox" id="e-inst"></div>
+    <div id="e-items"></div>
+    <div class="nav">
+      <button class="btn btn-s" id="btn-atras" onclick="bloqueAtras()">← Atrás</button>
+      <button class="btn btn-p" id="btn-sig" onclick="bloqueSig()">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ PSQI ESPECIAL ═══════ -->
+<div class="sec" id="s-psqi">
+  <div class="card">
+    <div class="ctag">PSQI — Índice de Calidad de Sueño</div>
+    <div class="ctit">Índice de Calidad de Sueño de Pittsburgh</div>
+    <div class="ibox">Por favor responde las siguientes preguntas sobre tus <strong>hábitos de sueño durante el último mes</strong>.</div>
+    <div id="psqi-items"></div>
+    <div class="nav">
+      <button class="btn btn-s" onclick="mostrar('s-escalas')">← Atrás</button>
+      <button class="btn btn-p" onclick="enviarPSQI()">Finalizar ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ RESULTADO ═══════ -->
+<div class="sec" id="s-resultado">
+  <div class="card">
+    <div class="rico">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="#2A9D8F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="#2A9D8F" stroke-width="2"/></svg>
+    </div>
+    <div class="rtit">Evaluación completada</div>
+    <div class="rdesc">Gracias por completar el instrumento. Tu psicólogo revisará estos resultados contigo.</div>
+    <div class="rres">
+      <div class="rscore" id="r-score">—</div>
+      <div>
+        <div class="rnivel" id="r-nivel">—</div>
+        <div class="rdesc2" id="r-desc">—</div>
+      </div>
+    </div>
+    <button class="btn btn-t" onclick="descargar()">⬇ Descargar respuestas (CSV)</button>
+    <button class="btn btn-s" style="margin-top:8px" onclick="mostrar('s-escalas')">Realizar otra evaluación</button>
+  </div>
+</div>
+
+</main>
+<footer>Sistema de Evaluación Psicológica · Datos protegidos bajo LFPDPPP</footer>
+
+<script>
+// ═══════════════════════════════════════
+// MSAL — AUTENTICACIÓN MICROSOFT
+// ═══════════════════════════════════════
+const MSAL_CONFIG = {
+  auth: {
+    clientId: 'e846d541-a7cb-476b-adff-536906c0a117',
+    authority: 'https://login.microsoftonline.com/fc1fe5d8-2116-4f74-8354-3e86b8516bcf',
+    redirectUri: 'https://diegocamach.github.io/evaluacion/evaluacion_psicologica.html'
+  },
+  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+};
+const msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+
+const FLOW_SCOPE = ['https://service.flow.microsoft.com//.default'];
+
+async function getFlowToken() {
+  // Intentar obtener token silenciosamente (usuario ya autenticado en SharePoint)
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length > 0) {
+    try {
+      const result = await msalInstance.acquireTokenSilent({
+        scopes: FLOW_SCOPE,
+        account: accounts[0]
+      });
+      return result.accessToken;
+    } catch (e) {
+      // Si falla silencioso, hacer popup
+    }
+  }
+  // Popup como fallback
+  const result = await msalInstance.acquireTokenPopup({ scopes: FLOW_SCOPE });
+  return result.accessToken;
+}
+
+// ═══════════════════════════════════════
+// POWER AUTOMATE — CONFIGURACIÓN
+// ═══════════════════════════════════════
+const PA_ENV  = 'Default-fc1fe5d8-2116-4f74-8354-3e86b8516bcf';
+const PA_FLOW = '664ae626-adaa-4cbd-8850-574f268656db';
+const PA_URL  = `https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/${PA_ENV}/flows/${PA_FLOW}/triggers/manual/run?api-version=2016-06-01`;
+
+// ═══════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════
+let escalaActual = null;
+let bloqueActual = 0;
+let respuestas = [];
+let totalItems = 0;
+
+// ═══════════════════════════════════════
+// DEFINICIÓN DE ESCALAS
+// ═══════════════════════════════════════
+const ESCALAS = {
+
+  bai: {
+    nombre: 'Inventario de Ansiedad de Beck',
+    instrucciones: 'A continuación se listan síntomas que las personas pueden experimentar. Indica <strong>cuánto te ha molestado cada uno durante la última semana</strong>, incluyendo hoy.',
+    bloques: [[0,7],[7,14],[14,21]],
+    items: ['Hormigueo o entumecimiento','Sensación de calor','Debilidad en las piernas','Incapacidad para relajarme','Miedo a que suceda lo peor','Mareos o vértigos','Palpitaciones o taquicardia','Sensación de inestabilidad','Sensación de estar aterrorizado','Nerviosismo','Sensación de ahogo','Temblor de manos','Temblor generalizado o estremecimiento','Miedo a perder el control','Dificultad para respirar','Miedo a morir','Estar asustado','Indigestión o molestias en el abdomen','Sensación de irme a desmayar','Rubor facial (sonrojarse)','Sudoración (no debida al calor)'],
+    opciones: [{t:'Nada (En absoluto)',v:0},{t:'Levemente (No me molestó mucho)',v:1},{t:'Moderadamente (Fue muy desagradable pero podía soportarlo)',v:2},{t:'Gravemente (Casi no podía soportarlo)',v:3}],
+    scoring: (rs) => {
+      const total = rs.reduce((a,b)=>a+b,0);
+      let nivel,desc;
+      if(total<=7){nivel='Ansiedad mínima';desc='Sin síntomas clínicos significativos de ansiedad.'}
+      else if(total<=15){nivel='Ansiedad leve';desc='Presencia leve de síntomas. Se recomienda monitoreo.'}
+      else if(total<=25){nivel='Ansiedad moderada';desc='Ansiedad moderada. Se recomienda atención psicológica.'}
+      else{nivel='Ansiedad grave';desc='Síntomas significativos de ansiedad. Atención urgente recomendada.'}
+      return {score:`${total}/63`,nivel,desc};
+    }
+  },
+
+  bdi: {
+    nombre: 'Inventario de Depresión de Beck II',
+    instrucciones: 'Por favor lee cada grupo de afirmaciones y selecciona la que mejor describa <strong>cómo te has sentido durante las últimas dos semanas</strong>, incluyendo hoy.',
+    bloques: [[0,7],[7,14],[14,21]],
+    items: ['Tristeza','Pesimismo','Sentimientos de fracaso','Pérdida de placer','Sentimientos de culpa','Sentimientos de castigo','Insatisfacción con uno mismo','Autocríticas','Pensamientos o deseos de suicidio','Llanto','Agitación','Pérdida de interés','Indecisión','Inutilidad','Pérdida de energía','Cambios en el patrón de sueño','Irritabilidad','Cambios en el apetito','Dificultad de concentración','Cansancio o fatiga','Pérdida de interés por el sexo'],
+    opciones: [{t:'0 – Sin cambio o dentro de lo habitual',v:0},{t:'1 – Levemente afectado',v:1},{t:'2 – Moderadamente afectado',v:2},{t:'3 – Gravemente afectado',v:3}],
+    scoring: (rs) => {
+      const total = rs.reduce((a,b)=>a+b,0);
+      let nivel,desc;
+      if(total<=13){nivel='Mínimo (Normal)';desc='Sin síntomas depresivos significativos.'}
+      else if(total<=19){nivel='Leve';desc='Depresión leve. Se recomienda seguimiento.'}
+      else if(total<=28){nivel='Moderado';desc='Depresión moderada. Se recomienda atención psicológica.'}
+      else{nivel='Severo';desc='Depresión severa. Se requiere atención urgente.'}
+      return {score:`${total}/63`,nivel,desc};
+    }
+  },
+
+  ocir: {
+    nombre: 'Inventario de Obsesiones y Compulsiones Revisado',
+    instrucciones: 'Las siguientes afirmaciones se refieren a experiencias que mucha gente tiene en su vida cotidiana. Indica <strong>cuánto te ha angustiado o perturbado cada una durante el último mes</strong>.',
+    bloques: [[0,6],[6,12],[12,18]],
+    items: ['Acumular cosas hasta el punto que le estorban','Comprobar las cosas más a menudo de lo necesario','Que las cosas no estén bien ordenadas','Sentir la necesidad de contar mientras está haciendo cosas','Tocar un objeto cuando sabe que lo han tocado desconocidos','No poder controlar sus propios pensamientos','Acumular cosas que no necesita','Comprobar repetidamente puertas, ventanas, cajones, etc.','Que los demás cambien la manera en que ha ordenado las cosas','Tener necesidad de repetir ciertos números','Tener a veces que asearse o lavarse por sentirse contaminado/a','Tener pensamientos desagradables en contra de su voluntad','Sentirse incapaz de tirar cosas por temor a necesitarlas después','Comprobar repetidamente el gas, el agua y la luz después de cerrarlos','Tener la necesidad que las cosas estén ordenadas de una determinada manera','Sentir que existen números buenos y malos','Lavarse las manos más a menudo y durante más tiempo de lo necesario','Tener con frecuencia pensamientos repugnantes y que le cueste librarse de ellos'],
+    opciones: [{t:'Nada (En absoluto)',v:0},{t:'Un poco',v:1},{t:'Bastante',v:2},{t:'Mucho',v:3},{t:'Muchísimo',v:4}],
+    scoring: (rs) => {
+      const acu = rs[0]+rs[6]+rs[12];
+      const total = rs.reduce((a,b)=>a+b,0) - acu;
+      let nivel,desc;
+      if(total<12){nivel='Mínimo / Subclínico';desc='Score total OCI-R por debajo del rango clínico.'}
+      else if(total<=21){nivel='Ligeramente angustiante';desc='Rango ligeramente angustiante. Monitoreo recomendado.'}
+      else if(total<=36){nivel='Moderadamente angustiante';desc='Rango moderadamente angustiante. Atención recomendada.'}
+      else if(total<=51){nivel='Muy angustiante';desc='Rango muy angustiante. Atención psicológica especializada.'}
+      else{nivel='Extremadamente angustiante';desc='Rango extremadamente angustiante. Atención urgente.'}
+      return {score:`${total}/60 (sin acumulación)`,nivel,desc};
+    }
+  },
+
+  audit: {
+    nombre: 'Prueba de Identificación de Trastornos por Uso de Alcohol',
+    instrucciones: 'Las siguientes preguntas se refieren a tu <strong>consumo de alcohol durante el último año</strong>. Por favor responde con honestidad.',
+    bloques: [[0,5],[5,10]],
+    items: ['¿Con qué frecuencia consumes alguna bebida alcohólica?','¿Cuántos tragos/copas consumes en un día típico cuando bebes?','¿Con qué frecuencia tomas 6 o más bebidas alcohólicas en una sola ocasión?','¿Con qué frecuencia en el último año no pudiste parar de beber una vez que habías empezado?','¿Con qué frecuencia en el último año dejaste de hacer algo que se esperaba de ti por haber bebido?','¿Con qué frecuencia en el último año necesitaste beber en la mañana siguiente después de haber bebido mucho el día anterior?','¿Con qué frecuencia en el último año te sentiste culpable o con remordimientos después de haber bebido?','¿Con qué frecuencia en el último año no pudiste recordar lo que sucedió la noche anterior porque habías estado bebiendo?','¿Has lastimado a alguien o te has lastimado como resultado de tu forma de beber?','¿Algún familiar, amigo o médico ha mostrado preocupación por tu forma de beber o te ha sugerido que dejes de beber?'],
+    opciones: [
+      [{t:'Nunca',v:0},{t:'Una vez al mes o menos',v:1},{t:'2 a 4 veces al mes',v:2},{t:'2 a 3 veces a la semana',v:3},{t:'4 o más veces a la semana',v:4}],
+      [{t:'1 o 2',v:0},{t:'3 o 4',v:1},{t:'5 o 6',v:2},{t:'7 a 9',v:3},{t:'10 o más',v:4}],
+      [{t:'Nunca',v:0},{t:'Menos de una vez al mes',v:1},{t:'Mensualmente',v:2},{t:'Semanalmente',v:3},{t:'A diario o casi a diario',v:4}],
+      [{t:'Nunca',v:0},{t:'Menos de una vez al mes',v:1},{t:'Mensualmente',v:2},{t:'Semanalmente',v:3},{t:'A diario o casi a diario',v:4}],
+      [{t:'Nunca',v:0},{t:'Menos de una vez al mes',v:1},{t:'Mensualmente',v:2},{t:'Semanalmente',v:3},{t:'A diario o casi a diario',v:4}],
+      [{t:'Nunca',v:0},{t:'Menos de una vez al mes',v:1},{t:'Mensualmente',v:2},{t:'Semanalmente',v:3},{t:'A diario o casi a diario',v:4}],
+      [{t:'Nunca',v:0},{t:'Menos de una vez al mes',v:1},{t:'Mensualmente',v:2},{t:'Semanalmente',v:3},{t:'A diario o casi a diario',v:4}],
+      [{t:'Nunca',v:0},{t:'Menos de una vez al mes',v:1},{t:'Mensualmente',v:2},{t:'Semanalmente',v:3},{t:'A diario o casi a diario',v:4}],
+      [{t:'No',v:0},{t:'Sí, pero no en el último año',v:2},{t:'Sí, en el último año',v:4}],
+      [{t:'No',v:0},{t:'Sí, pero no en el último año',v:2},{t:'Sí, en el último año',v:4}]
+    ],
+    scoring: (rs) => {
+      const total = rs.reduce((a,b)=>a+b,0);
+      let nivel,desc;
+      if(total<=7){nivel='Bebe en forma responsable';desc='Consumo de bajo riesgo. Se recomienda no incrementarlo.'}
+      else if(total<=15){nivel='Consumo de riesgo';desc='Consumo en zona de riesgo. Se recomienda reducir o eliminar.'}
+      else if(total<=19){nivel='Consumo perjudicial';desc='Consumo perjudicial. Intervención breve recomendada.'}
+      else{nivel='Abuso/dependencia probable';desc='Probable abuso o dependencia al alcohol. Se requiere evaluación especializada.'}
+      return {score:`${total}/40`,nivel,desc};
+    }
+  },
+
+  asrs: {
+    nombre: 'Escala de Auto-Reporte de Síntomas de TDAH',
+    instrucciones: 'Por favor indica <strong>con qué frecuencia experimentas cada situación</strong>. Las preguntas se refieren a cómo te has sentido en el trabajo y en la vida cotidiana.',
+    bloques: [[0,6],[6,12],[12,18]],
+    items: ['¿Con qué frecuencia tienes problemas para terminar los detalles finales de un proyecto, una vez que las partes más difíciles fueron concluidas?','¿Con qué frecuencia tienes dificultad para tener las cosas en orden cuando tienes que hacer una tarea que requiere organización?','¿Con qué frecuencia tienes problemas para recordar juntas de trabajo u otras obligaciones?','¿Cuándo tienes una tarea que requiere mucha concentración, con qué frecuencia evitas o retrasas empezarla?','¿Con qué frecuencia mueves o retuerces tus manos o pies cuando estás sentado por mucho tiempo?','¿Con qué frecuencia te sientes sobre-activo e impulsado a hacer cosas, como si te moviera un motor?','¿Con qué frecuencia cometes errores por falta de cuidado cuando estás trabajando en un proyecto aburrido o difícil?','¿Con qué frecuencia tienes dificultad para mantener atención cuando estás haciendo trabajos aburridos o repetitivos?','¿Con qué frecuencia tienes dificultad para concentrarte en lo que la gente te dice, aún cuando estén hablando contigo directamente?','¿Con qué frecuencia pierdes o tienes dificultad para encontrar cosas en la casa o en el trabajo?','¿Con qué frecuencia te distraes por ruidos o actividades alrededor de ti?','¿Con qué frecuencia te paras de tu asiento en juntas o en otras situaciones en las que se supone debes permanecer sentado?','¿Con qué frecuencia te sientes inquieto o nervioso?','¿Con qué frecuencia tienes dificultades para relajarte cuando tienes tiempo para ti?','¿Con qué frecuencia sientes que hablas demasiado cuando estás en reuniones sociales?','¿Cuándo estás en una conversación, con qué frecuencia te descubres terminando las oraciones de la gente, antes de que ellos terminen?','¿Con qué frecuencia tienes dificultad para esperar tu turno en situaciones en que debes hacerlo?','¿Con qué frecuencia interrumpes a otros cuando están ocupados?'],
+    opciones: [{t:'Nunca',v:0},{t:'Rara vez',v:1},{t:'Algunas veces',v:2},{t:'Con frecuencia',v:3},{t:'Muy frecuentemente',v:4}],
+    scoring: (rs) => {
+      const total = rs.reduce((a,b)=>a+b,0);
+      let nivel,desc;
+      if(total<=24){nivel='Síntomas mínimos';desc='Sin indicadores significativos de TDAH en adultos.'}
+      else if(total<=36){nivel='Síntomas leves';desc='Síntomas leves. Se recomienda seguimiento clínico.'}
+      else if(total<=48){nivel='Síntomas moderados';desc='Síntomas moderados compatibles con TDAH. Evaluación recomendada.'}
+      else{nivel='Síntomas severos';desc='Síntomas severos. Evaluación diagnóstica especializada urgente.'}
+      return {score:`${total}/72`,nivel,desc};
+    }
+  },
+
+  ders: {
+    nombre: 'Escala de Dificultades en la Regulación Emocional',
+    instrucciones: 'Por favor indica <strong>cuántas veces te pasan las siguientes afirmaciones</strong>, usando la escala del 1 al 5 indicada en cada opción.',
+    bloques: [[0,9],[9,18],[18,27],[27,36]],
+    // Ítems inversos (índice 0-based): 0,1,5,6,7,9,16,19,21,23,33
+    inversos: [0,1,5,6,7,9,16,19,21,23,33],
+    items: [
+      'Tengo claro lo que siento.',
+      'Pongo atención a cómo me siento.',
+      'Mis emociones me sobrepasan y se salen de control.',
+      'No tengo idea de cómo me siento.',
+      'Me cuesta trabajo entender por qué me siento como me siento.',
+      'Estoy atento/a a mis sentimientos.',
+      'Sé exactamente cómo me siento.',
+      'Le doy importancia a lo que estoy sintiendo.',
+      'Estoy confundido/a por cómo me siento.',
+      'Cuando me siento mal, puedo reconocer cómo me siento.',
+      'Cuando me siento mal, me enojo conmigo mismo/a por sentirme de esa manera.',
+      'Cuando me siento mal, me da vergüenza sentirme de esa manera.',
+      'Cuando me siento mal, me cuesta trabajo terminar mis deberes.',
+      'Cuando me siento mal, pierdo el control.',
+      'Cuando me siento mal, creo que me sentiré así por mucho tiempo.',
+      'Cuando me siento mal, creo que acabaré sintiéndome muy deprimido/a.',
+      'Cuando me siento mal, creo que mis emociones son válidas e importantes.',
+      'Cuando me siento mal, me cuesta trabajo enfocarme en otras cosas.',
+      'Cuando me siento mal, me siento fuera de control.',
+      'Cuando me siento mal, aún puedo hacer cosas.',
+      'Cuando me siento mal, me siento avergonzado/a de mí mismo/a por sentirme de esa manera.',
+      'Cuando me siento mal, sé que puedo encontrar alguna forma para sentirme eventualmente mejor.',
+      'Cuando me siento mal, me siento débil.',
+      'Cuando me siento mal, creo que puedo controlar mi comportamiento.',
+      'Cuando me siento mal, me siento culpable por sentirme de esa manera.',
+      'Cuando me siento mal, me cuesta trabajo concentrarme.',
+      'Cuando me siento mal, me cuesta trabajo controlar lo que hago.',
+      'Cuando me siento mal, creo que no hay nada que pueda hacer para sentirme mejor.',
+      'Cuando me siento mal, me molesto conmigo mismo/a por sentirme de esa manera.',
+      'Cuando me siento mal, empiezo a sentirme muy mal conmigo mismo/a.',
+      'Cuando me siento mal, creo que no puedo hacer otra cosa que dejarme llevar por cómo me siento.',
+      'Cuando me siento mal, pierdo el control de mi comportamiento.',
+      'Cuando me siento mal, se me dificulta pensar en otra cosa.',
+      'Cuando me siento mal, me tomo el tiempo para comprender lo que estoy sintiendo realmente.',
+      'Cuando me siento mal, me toma mucho tiempo sentirme mejor.',
+      'Cuando me siento mal, mis emociones parecen desbordantes.'
+    ],
+    opciones: [
+      {t:'1 — Casi nunca (0–10%)', v:1},
+      {t:'2 — Algunas veces (11–35%)', v:2},
+      {t:'3 — La mitad de las veces (36–65%)', v:3},
+      {t:'4 — La mayor parte de las veces (66–90%)', v:4},
+      {t:'5 — Casi siempre (91–100%)', v:5}
+    ],
+    scoring: (rs) => {
+      // Ítems inversos (0-based): 0,1,5,6,7,9,16,19,21,23,33
+      const inv=[0,1,5,6,7,9,16,19,21,23,33];
+      const scored = rs.map((v,i) => inv.includes(i) ? (6-v) : v);
+
+      // Subescalas (ítems en 1-based del PDF, convertidos a 0-based)
+      // 1. No-aceptación: 25,21,12,11,29,23 → idx 24,20,11,10,28,22
+      const noAcep = [24,20,11,10,28,22].reduce((a,i)=>a+scored[i],0);
+      // 2. Metas: 26,18,13,33,20* → idx 25,17,12,32,19
+      const metas = [25,17,12,32,19].reduce((a,i)=>a+scored[i],0);
+      // 3. Impulsos: 32,27,14,19,3,24* → idx 31,26,13,18,2,23
+      const impulso = [31,26,13,18,2,23].reduce((a,i)=>a+scored[i],0);
+      // 4. Conciencia: 6*,2*,10*,17*,8*,34* → idx 5,1,9,16,7,33
+      const conciencia = [5,1,9,16,7,33].reduce((a,i)=>a+scored[i],0);
+      // 5. Estrategias: 16,15,31,35,28,22*,26,30 → idx 15,14,30,34,27,21,25,29
+      const estrategias = [15,14,30,34,27,21,25,29].reduce((a,i)=>a+scored[i],0);
+      // 6. Claridad: 5,4,9,7*,1* → idx 4,3,8,6,0
+      const claridad = [4,3,8,6,0].reduce((a,i)=>a+scored[i],0);
+
+      const total = scored.reduce((a,b)=>a+b,0);
+      let nivel,desc;
+      if(total<=72){nivel='Regulación emocional adecuada';desc='Sin dificultades significativas en la regulación emocional.'}
+      else if(total<=108){nivel='Dificultades leves';desc='Leves dificultades en regulación emocional. Monitoreo recomendado.'}
+      else if(total<=144){nivel='Dificultades moderadas';desc='Dificultades moderadas. Se recomienda atención psicológica.'}
+      else{nivel='Dificultades severas';desc='Dificultades severas en regulación emocional. Atención urgente recomendada.'}
+
+      // Subescala más elevada
+      const subs=[
+        {n:'No-aceptación',v:noAcep,max:30},
+        {n:'Metas',v:metas,max:25},
+        {n:'Impulsos',v:impulso,max:30},
+        {n:'Conciencia emocional',v:conciencia,max:30},
+        {n:'Estrategias',v:estrategias,max:40},
+        {n:'Claridad emocional',v:claridad,max:25}
+      ];
+      const principal = subs.reduce((a,b)=>(b.v/b.max>a.v/a.max)?b:a);
+      desc += ` Subescala más elevada: ${principal.n}.`;
+
+      return {score:`${total}/180`,nivel,desc};
+    }
+  },
+
+  cesqt: {
+    nombre: 'Cuestionario para la Evaluación del Síndrome de Quemarse por el Trabajo',
+    instrucciones: 'Por favor indica <strong>con qué frecuencia experimentas cada situación en tu trabajo</strong>. Sé honesto/a con tus respuestas.',
+    bloques: [[0,7],[7,14],[14,20]],
+    items: ['Mi trabajo me supone un reto estimulante','No me apetece atender a algunas personas en mi trabajo','Creo que muchas de las personas a las que atiendo son insoportables','Me preocupa el trato que he dado a algunas personas en el trabajo','Veo mi trabajo como una fuente de realización personal','Creo que los familiares de las personas a las que atiendo son unos pesados','Pienso que trato con indiferencia a algunas personas a las que atiendo','Pienso que estoy saturado por el trabajo','Me siento culpable por alguna de mis actitudes en el trabajo','Pienso que mi trabajo me aporta cosas positivas','Me apetece ser irónico con algunas personas a las que atiendo','Me siento agobiado por el trabajo','Tengo remordimientos por algunos de mis comportamientos en el trabajo','Etiqueto o clasifico a las personas a las que atiendo según su comportamiento','Mi trabajo me resulta gratificante','Pienso que debería pedir disculpas a alguien por mi comportamiento','Me siento cansado físicamente en el trabajo','Me siento desgastado emocionalmente','Me siento ilusionado por mi trabajo','Me siento mal por algunas cosas que he dicho en el trabajo'],
+    opciones: [{t:'Nunca',v:0},{t:'Raramente (algunas veces al año)',v:1},{t:'A veces (algunas veces al mes)',v:2},{t:'Frecuentemente (algunas veces por semana)',v:3},{t:'Muy frecuentemente (todos los días)',v:4}],
+    scoring: (rs) => {
+      const ilusionItems=[0,4,9,14,18];
+      const ilusionScore = ilusionItems.reduce((a,i)=>a+rs[i],0)/ilusionItems.length;
+      const desgasteItems=[7,11,16,17];
+      const desgasteScore = desgasteItems.reduce((a,i)=>a+rs[i],0)/desgasteItems.length;
+      const total = rs.reduce((a,b)=>a+b,0);
+      let nivel,desc;
+      if(ilusionScore>=3&&desgasteScore<2){nivel='Sin burnout significativo';desc='Ilusión por el trabajo alta y desgaste bajo.'}
+      else if(desgasteScore>=3){nivel='Burnout alto';desc='Nivel elevado de desgaste laboral. Intervención recomendada.'}
+      else{nivel='Burnout moderado';desc='Síntomas moderados. Se recomienda seguimiento y apoyo.'}
+      return {score:`${total}/80`,nivel,desc};
+    }
+  }
+};
+
+// PSQI especial (preguntas abiertas + opciones mixtas)
+const PSQI_PREG = [
+  {tipo:'hora',label:'¿A qué hora usualmente se ha acostado por las noches durante el último mes?',id:'p1'},
+  {tipo:'min',label:'¿Cuántos minutos le ha llevado usualmente quedarse dormido(a) cada noche durante el último mes?',id:'p2'},
+  {tipo:'hora',label:'¿A qué hora se ha levantado usualmente en las mañanas durante el último mes?',id:'p3'},
+  {tipo:'num',label:'Durante el último mes, ¿cuántas horas de sueño real ha tenido por noche? (Puede ser diferente al número de horas que estuvo en cama)',id:'p4',placeholder:'Ej. 6'},
+  {tipo:'ops',label:'Durante el último mes, ¿cómo calificaría su calidad de sueño en general?',id:'p5',ops:[{t:'Muy buena',v:0},{t:'Bastante buena',v:1},{t:'Bastante mala',v:2},{t:'Muy mala',v:3}]},
+  {tipo:'ops',label:'Durante el último mes, ¿con qué frecuencia ha tenido problemas para dormir porque no puede conciliar el sueño en los primeros 30 minutos?',id:'p6',ops:[{t:'Ninguna vez en el último mes',v:0},{t:'Menos de una vez a la semana',v:1},{t:'Una o dos veces a la semana',v:2},{t:'Tres o más veces a la semana',v:3}]},
+  {tipo:'ops',label:'Durante el último mes, ¿con qué frecuencia ha tomado medicamentos (con o sin prescripción médica) para dormir?',id:'p7',ops:[{t:'Ninguna vez en el último mes',v:0},{t:'Menos de una vez a la semana',v:1},{t:'Una o dos veces a la semana',v:2},{t:'Tres o más veces a la semana',v:3}]},
+  {tipo:'ops',label:'Durante el último mes, ¿con qué frecuencia ha tenido problemas para mantenerse despierto(a) mientras conducía, comía o realizaba alguna actividad social?',id:'p8',ops:[{t:'Ninguna vez en el último mes',v:0},{t:'Menos de una vez a la semana',v:1},{t:'Una o dos veces a la semana',v:2},{t:'Tres o más veces a la semana',v:3}]},
+  {tipo:'ops',label:'Durante el último mes, ¿cuánto problema ha representado para usted mantener el entusiasmo suficiente para realizar sus actividades?',id:'p9',ops:[{t:'Ningún problema',v:0},{t:'Un problema leve',v:1},{t:'Un problema moderado',v:2},{t:'Un problema muy serio',v:3}]}
+];
+
+// ═══════════════════════════════════════
+// NAVEGACIÓN
+// ═══════════════════════════════════════
+function mostrar(id){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function irEscalas(){
+  if(!validar())return;
+  // Mostrar campo empresa si es necesario
+  document.getElementById('fg-empresa').style.display='block';
+  mostrar('s-escalas');
+}
+
+function validar(){
+  let ok=true;
+  const cs=[
+    {id:'nombre',eid:'e-nombre',fn:v=>v.trim().length>1},
+    {id:'fecha',eid:'e-fecha',fn:v=>v!==''},
+    {id:'edad',eid:'e-edad',fn:v=>v!==''&&+v>=10&&+v<=99},
+    {id:'sexo',eid:'e-sexo',fn:v=>v!==''},
+  ];
+  cs.forEach(c=>{
+    const el=document.getElementById(c.id);
+    const ee=document.getElementById(c.eid);
+    if(!c.fn(el.value)){el.classList.add('err');ee.classList.add('on');ok=false;}
+    else{el.classList.remove('err');ee.classList.remove('on');}
+  });
+  return ok;
+}
+
+// ═══════════════════════════════════════
+// INICIAR ESCALA
+// ═══════════════════════════════════════
+function iniciar(id){
+  if(id==='psqi'){iniciarPSQI();return;}
+  escalaActual=id;
+  bloqueActual=0;
+  const e=ESCALAS[id];
+  totalItems=e.items.length;
+  respuestas=new Array(totalItems).fill(null);
+  document.getElementById('e-tit').textContent=e.nombre;
+  document.getElementById('e-inst').innerHTML=e.instrucciones;
+  renderBloque();
+  mostrar('s-escala');
+}
+
+function renderBloque(){
+  const e=ESCALAS[escalaActual];
+  const [ini,fin]=e.bloques[bloqueActual];
+  const cont=document.getElementById('e-items');
+  cont.innerHTML='';
+
+  // Tag
+  document.getElementById('e-tag').textContent=
+    `${escalaActual.toUpperCase()} · Bloque ${bloqueActual+1} de ${e.bloques.length}`;
+
+  // Progreso
+  const resp=respuestas.filter(r=>r!==null).length;
+  const pct=Math.round((resp/totalItems)*100);
+  document.getElementById('p-fill').style.width=pct+'%';
+  document.getElementById('p-pct').textContent=pct+'%';
+  document.getElementById('p-label').textContent=`Ítems ${ini+1}–${fin} de ${totalItems}`;
+
+  // Botón atrás
+  document.getElementById('btn-atras').style.display=bloqueActual===0?'none':'block';
+  document.getElementById('btn-sig').textContent=
+    bloqueActual===e.bloques.length-1?'Finalizar evaluación ✓':'Siguiente →';
+
+  // Ítems
+  e.items.slice(ini,fin).forEach((txt,i)=>{
+    const idx=ini+i;
+    const ops=Array.isArray(e.opciones[0])?e.opciones[idx]:e.opciones;
+    const respondido=respuestas[idx]!==null;
+    const div=document.createElement('div');
+    div.className='item'+(respondido?' ok':'');
+    div.id=`item-${idx}`;
+    div.innerHTML=`
+      <div class="inum">Ítem ${idx+1}</div>
+      <div class="itxt">${txt}</div>
+      <div class="ops">
+        ${ops.map(op=>`
+          <button class="op${respuestas[idx]===op.v?' sel':''}" onclick="selec(${idx},${op.v},this)">
+            <span class="odot"></span>
+            <span>${op.t}</span>
+            <span class="oval">${op.v}</span>
+          </button>`).join('')}
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+function selec(idx,val,btn){
+  respuestas[idx]=val;
+  document.getElementById(`item-${idx}`).classList.add('ok');
+  const ops=document.getElementById(`item-${idx}`).querySelectorAll('.op');
+  ops.forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  // Actualizar progreso
+  const resp=respuestas.filter(r=>r!==null).length;
+  const pct=Math.round((resp/totalItems)*100);
+  document.getElementById('p-fill').style.width=pct+'%';
+  document.getElementById('p-pct').textContent=pct+'%';
+}
+
+function bloqueSig(){
+  const e=ESCALAS[escalaActual];
+  const [ini,fin]=e.bloques[bloqueActual];
+  const falt=respuestas.slice(ini,fin).filter(r=>r===null).length;
+  if(falt>0){alert(`Por favor responde todos los ítems de esta sección.\nFaltan ${falt} ítem(s).`);return;}
+  if(bloqueActual<e.bloques.length-1){bloqueActual++;renderBloque();window.scrollTo({top:0,behavior:'smooth'});}
+  else{mostrarResultado();}
+}
+
+function bloqueAtras(){
+  if(bloqueActual>0){bloqueActual--;renderBloque();window.scrollTo({top:0,behavior:'smooth'});}
+  else{mostrar('s-escalas');}
+}
+
+// ═══════════════════════════════════════
+// RESULTADO
+// ═══════════════════════════════════════
+async function mostrarResultado(){
+  const {score,nivel,desc}=ESCALAS[escalaActual].scoring(respuestas);
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('r-nivel').textContent=nivel;
+  document.getElementById('r-desc').textContent=desc;
+  mostrar('s-resultado');
+  // Enviar a SharePoint automáticamente
+  mostrarEstadoEnvio('enviando');
+  const enviado = await enviarASharePoint({score, nivel, desc});
+  mostrarEstadoEnvio(enviado ? 'ok' : 'error');
+}
+
+// ═══════════════════════════════════════
+// PSQI
+// ═══════════════════════════════════════
+function iniciarPSQI(){
+  const cont=document.getElementById('psqi-items');
+  cont.innerHTML='';
+  PSQI_PREG.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='item';
+    div.style.marginBottom='12px';
+    let inner=`<div class="inum">Pregunta ${i+1}</div><div class="itxt">${p.label}</div>`;
+    if(p.tipo==='ops'){
+      inner+=`<div class="ops">${p.ops.map(op=>`
+        <button class="op" onclick="selecPSQI('${p.id}',${op.v},this,this.closest('.item'))">
+          <span class="odot"></span><span>${op.t}</span><span class="oval">${op.v}</span>
+        </button>`).join('')}</div>`;
+    } else if(p.tipo==='hora'){
+      inner+=`<input type="time" id="${p.id}" style="margin-top:8px;width:140px;padding:8px 12px;border:1.5px solid var(--borde);border-radius:9px;font-family:Inter,sans-serif;font-size:14px">`;
+    } else {
+      inner+=`<input type="number" id="${p.id}" placeholder="${p.placeholder||'Ej. 30'}" min="0" style="margin-top:8px;width:140px;padding:8px 12px;border:1.5px solid var(--borde);border-radius:9px;font-family:Inter,sans-serif;font-size:14px">`;
+    }
+    div.innerHTML=inner;
+    cont.appendChild(div);
+  });
+  mostrar('s-psqi');
+}
+
+function selecPSQI(id,val,btn,itemEl){
+  itemEl.classList.add('ok');
+  itemEl.querySelectorAll('.op').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  itemEl.dataset.val=val;
+}
+
+async function enviarPSQI(){
+  const vals={};
+  let ok=true;
+  PSQI_PREG.forEach(p=>{
+    if(p.tipo==='ops'){
+      const el=document.querySelector(`[onclick*="'${p.id}'"].sel`);
+      if(!el){ok=false;}else{vals[p.id]=parseInt(document.querySelector(`[onclick*="'${p.id}'"].sel .oval`).textContent);}
+    } else {
+      const el=document.getElementById(p.id);
+      if(!el||el.value===''){ok=false;}else{vals[p.id]=el.value;}
+    }
+  });
+  if(!ok){alert('Por favor responde todas las preguntas.');return;}
+
+  // Scoring simplificado PSQI
+  let total=0;
+  // C1 calidad subjetiva
+  total+=vals.p5||0;
+  // C2 latencia
+  const latMin=parseInt(vals.p2)||0;
+  let c2lat=latMin<=15?0:latMin<=30?1:latMin<=60?2:3;
+  total+=Math.round((c2lat+(vals.p6||0))/2);
+  // C6 medicación
+  total+=vals.p7||0;
+  // C7 disfunción diurna
+  total+=Math.round(((vals.p8||0)+(vals.p9||0))/2);
+
+  escalaActual='psqi';
+  respuestas=Object.values(vals);
+  let nivel,desc;
+  if(total<=4){nivel='Buena calidad de sueño';desc='Sin alteraciones significativas del sueño.'}
+  else if(total<=8){nivel='Mala calidad de sueño';desc='Calidad de sueño deteriorada. Se recomienda atención.'}
+  else if(total<=14){nivel='Alteración moderada';desc='Alteración moderada del sueño. Atención médica recomendada.'}
+  else{nivel='Alteración severa';desc='Alteración severa del sueño. Requiere atención urgente.'}
+  document.getElementById('r-score').textContent=`${total}/21`;
+  document.getElementById('r-nivel').textContent=nivel;
+  document.getElementById('r-desc').textContent=desc;
+  mostrar('s-resultado');
+  // Enviar a SharePoint automáticamente
+  mostrarEstadoEnvio('enviando');
+  const enviado = await enviarASharePoint({score:`${total}/21`, nivel, desc});
+  mostrarEstadoEnvio(enviado ? 'ok' : 'error');
+}
+
+// ═══════════════════════════════════════
+// DESCARGA CSV
+// ═══════════════════════════════════════
+function descargar(){
+  const d={
+    nombre:document.getElementById('nombre').value,
+    fecha:document.getElementById('fecha').value,
+    edad:document.getElementById('edad').value,
+    sexo:document.getElementById('sexo').value,
+    ecivil:document.getElementById('ecivil').value,
+    escola:document.getElementById('escola').value,
+    prof:document.getElementById('prof').value,
+    empresa:document.getElementById('empresa').value,
+  };
+
+  let encabezados=['Nombre Completo','Fecha de aplicación','Edad','Sexo','Estado Civil','Escolaridad','Profesión','Empresa','Escala Aplicada'];
+  let valores=[d.nombre,d.fecha,d.edad,d.sexo,d.ecivil,d.escola,d.prof,d.empresa,escalaActual.toUpperCase()];
+
+  if(escalaActual&&ESCALAS[escalaActual]){
+    const e=ESCALAS[escalaActual];
+    const ops=Array.isArray(e.opciones[0])?null:e.opciones;
+    e.items.forEach((item,i)=>{
+      encabezados.push(item);
+      const opSet=ops||(Array.isArray(e.opciones[i])?e.opciones[i]:[]);
+      const found=opSet.find(o=>o.v===respuestas[i]);
+      valores.push(found?found.t:respuestas[i]);
+    });
+    const {score,nivel}=e.scoring(respuestas);
+    encabezados.push('Puntuación Total','Nivel');
+    valores.push(score,nivel);
+  }
+
+  const csv=[encabezados.join(','),valores.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')].join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`${(escalaActual||'eval').toUpperCase()}_${d.nombre.replace(/ /g,'_')}_${d.fecha}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
+// ═══════════════════════════════════════
+// POWER AUTOMATE — ENVÍO AUTOMÁTICO
+// ═══════════════════════════════════════
+async function enviarASharePoint(scoreData) {
+  const d = {
+    nombre:   document.getElementById('nombre').value,
+    fecha:    document.getElementById('fecha').value,
+    edad:     document.getElementById('edad').value,
+    sexo:     document.getElementById('sexo').value,
+    estadoCivil: document.getElementById('ecivil').value,
+    escolaridad: document.getElementById('escola').value,
+    profesion:   document.getElementById('prof').value,
+    empresa:     document.getElementById('empresa').value,
+  };
+
+  const payload = {
+    nombre:       d.nombre,
+    fecha:        d.fecha,
+    edad:         d.edad,
+    sexo:         d.sexo,
+    estadoCivil:  d.estadoCivil,
+    escolaridad:  d.escolaridad,
+    profesion:    d.profesion,
+    empresa:      d.empresa,
+    puntuacion:   String(scoreData.score),
+    nivel:        scoreData.nivel,
+    interpretacion: scoreData.desc
+  };
+
+  try {
+    const token = await getFlowToken();
+    const resp = await fetch(PA_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        text:   JSON.stringify(payload),
+        escala: escalaActual.toUpperCase()
+      })
+    });
+
+    if (resp.ok || resp.status === 202) {
+      console.log('✅ Datos enviados a Power Automate correctamente');
+      return true;
+    } else {
+      const txt = await resp.text();
+      console.error('Error Power Automate:', resp.status, txt);
+      return false;
+    }
+  } catch (err) {
+    console.error('Error de conexión Power Automate:', err);
+    return false;
+  }
+}
+
+// Indicador visual de envío
+function mostrarEstadoEnvio(estado) {
+  let badge = document.getElementById('badge-envio');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'badge-envio';
+    badge.style.cssText = `
+      position:fixed;bottom:24px;right:24px;
+      padding:10px 18px;border-radius:10px;
+      font-family:Inter,sans-serif;font-size:13px;font-weight:600;
+      box-shadow:0 4px 16px rgba(0,0,0,0.15);
+      transition:all 0.3s;z-index:9999;
+    `;
+    document.body.appendChild(badge);
+  }
+  if (estado === 'enviando') {
+    badge.style.background = '#1B3A5C';
+    badge.style.color = 'white';
+    badge.textContent = '⏳ Guardando en sistema...';
+    badge.style.display = 'block';
+  } else if (estado === 'ok') {
+    badge.style.background = '#2A9D8F';
+    badge.style.color = 'white';
+    badge.textContent = '✅ Guardado correctamente';
+    setTimeout(() => { badge.style.display = 'none'; }, 4000);
+  } else if (estado === 'error') {
+    badge.style.background = '#E53E3E';
+    badge.style.color = 'white';
+    badge.textContent = '⚠️ Error al guardar — descarga el CSV como respaldo';
+    setTimeout(() => { badge.style.display = 'none'; }, 6000);
+  }
+}
+
+// Fecha hoy por defecto
+document.getElementById('fecha').valueAsDate=new Date();
+</script>
+</body>
+</html>
