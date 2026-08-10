@@ -284,25 +284,22 @@ const MSAL_CONFIG = {
   },
   cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
 };
-const msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
-
+let msalInstance = null;
 const FLOW_SCOPE = ['https://service.flow.microsoft.com//.default'];
 
+window.addEventListener('DOMContentLoaded', () => {
+  msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+});
+
 async function getFlowToken() {
-  // Intentar obtener token silenciosamente (usuario ya autenticado en SharePoint)
+  if (!msalInstance) msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
   const accounts = msalInstance.getAllAccounts();
   if (accounts.length > 0) {
     try {
-      const result = await msalInstance.acquireTokenSilent({
-        scopes: FLOW_SCOPE,
-        account: accounts[0]
-      });
+      const result = await msalInstance.acquireTokenSilent({ scopes: FLOW_SCOPE, account: accounts[0] });
       return result.accessToken;
-    } catch (e) {
-      // Si falla silencioso, hacer popup
-    }
+    } catch (e) {}
   }
-  // Popup como fallback
   const result = await msalInstance.acquireTokenPopup({ scopes: FLOW_SCOPE });
   return result.accessToken;
 }
