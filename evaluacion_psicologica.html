@@ -351,7 +351,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
 const MSAL_CLIENT_ID  = 'e846d541-a7cb-476b-adff-536906c0a117';
 const MSAL_TENANT_ID  = 'fc1fe5d8-2116-4f74-8354-3e86b8516bcf';
 const MSAL_REDIRECT   = 'https://diegocamach.github.io/evaluacion/evaluacion_psicologica.html';
-const FLOW_SCOPE      = ['https://service.flow.microsoft.com/Flows.Read.All', 'https://service.flow.microsoft.com/Flows.Manage.All'];
+const FLOW_SCOPE      = ['https://netorgft13019324.sharepoint.com/.default'];
 let msalInstance      = null;
 
 async function getFlowToken() {
@@ -375,9 +375,9 @@ async function getFlowToken() {
 // ═══════════════════════════════════════
 // POWER AUTOMATE — CONFIGURACIÓN
 // ═══════════════════════════════════════
-const PA_ENV  = 'Default-fc1fe5d8-2116-4f74-8354-3e86b8516bcf';
-const PA_FLOW = '664ae626-adaa-4cbd-8850-574f268656db';
-const PA_URL  = `https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/${PA_ENV}/flows/${PA_FLOW}/triggers/manual/run?api-version=2016-06-01`;
+const SP_SITE = 'https://netorgft13019324.sharepoint.com/sites/Evaluacion';
+const SP_LIST = 'Respuestas Escalas';
+const SP_URL  = `${SP_SITE}/_api/web/lists/getbytitle('${encodeURIComponent(SP_LIST)}')/items`;
 
 // ═══════════════════════════════════════
 // ESTADO GLOBAL
@@ -875,60 +875,75 @@ function descargar(){
 
 
 // ═══════════════════════════════════════
-// POWER AUTOMATE — ENVÍO AUTOMÁTICO
+// SHAREPOINT — ENVÍO AUTOMÁTICO
 // ═══════════════════════════════════════
 async function enviarASharePoint(scoreData) {
   const d = {
-    nombre:   document.getElementById('nombre').value,
-    fecha:    document.getElementById('fecha').value,
-    edad:     document.getElementById('edad').value,
-    sexo:     document.getElementById('sexo').value,
-    estadoCivil: document.getElementById('ecivil').value,
-    escolaridad: document.getElementById('escola').value,
-    profesion:   document.getElementById('prof').value,
+    nombre:      document.getElementById('nombre').value,
+    fecha:       document.getElementById('fecha').value,
+    edad:        document.getElementById('edad').value,
+    sexo:        document.getElementById('sexo').value,
+    ecivil:      document.getElementById('ecivil').value,
+    escola:      document.getElementById('escola').value,
+    prof:        document.getElementById('prof').value,
     empresa:     document.getElementById('empresa').value,
   };
 
-  const payload = {
-    nombre:       d.nombre,
-    fecha:        d.fecha,
-    edad:         d.edad,
-    sexo:         d.sexo,
-    estadoCivil:  d.estadoCivil,
-    escolaridad:  d.escolaridad,
-    profesion:    d.profesion,
-    empresa:      d.empresa,
-    puntuacion:   String(scoreData.score),
-    nivel:        scoreData.nivel,
-    interpretacion: scoreData.desc
+  const item = {
+    __metadata: { type: 'SP.Data.Respuestas_x0020_EscalasListItem' },
+    Title:                          `${(escalaActual||'').toUpperCase()} — ${d.nombre} — ${d.fecha}`,
+    Escala:                         (escalaActual||'').toUpperCase(),
+    Nombre_x0020_Completo:          d.nombre,
+    Fecha_x0020_de_x0020_Aplicacion: d.fecha,
+    Edad:                           d.edad,
+    Sexo:                           d.sexo,
+    Estado_x0020_Civil:             d.ecivil,
+    Escolaridad:                    d.escola,
+    Profesion:                      d.prof,
+    Empresa:                        d.empresa,
+    Puntuacion_x0020_Total:         String(scoreData.score),
+    Nivel:                          scoreData.nivel,
+    Interpretacion:                 scoreData.desc
   };
 
   try {
     const token = await getFlowToken();
-    const resp = await fetch(PA_URL, {
+
+    // Obtener form digest
+    const ctxResp = await fetch(`${SP_SITE}/_api/contextinfo`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Accept': 'application/json;odata=verbose',
+        'Content-Type': 'application/json;odata=verbose',
         'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!ctxResp.ok) throw new Error('No se pudo obtener contextinfo');
+    const ctxData = await ctxResp.json();
+    const digest = ctxData.d.GetContextWebInformation.FormDigestValue;
+
+    // Escribir en la lista
+    const resp = await fetch(SP_URL, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json;odata=verbose',
+        'Content-Type': 'application/json;odata=verbose',
+        'Authorization': `Bearer ${token}`,
+        'X-RequestDigest': digest
       },
-      body: JSON.stringify({
-        inputs: {
-          text:   JSON.stringify(payload),
-          escala: escalaActual.toUpperCase()
-        }
-      })
+      body: JSON.stringify(item)
     });
 
-    if (resp.ok || resp.status === 202) {
-      console.log('✅ Datos enviados a Power Automate correctamente');
+    if (resp.ok) {
+      console.log('✅ Guardado en SharePoint correctamente');
       return true;
     } else {
       const txt = await resp.text();
-      console.error('Error Power Automate:', resp.status, txt);
+      console.error('Error SharePoint:', resp.status, txt);
       return false;
     }
   } catch (err) {
-    console.error('Error de conexión Power Automate:', err);
+    console.error('Error de conexión SharePoint:', err);
     return false;
   }
 }
@@ -974,40 +989,11 @@ function mostrarEstadoEnvio(estado) {
 
 async function reintentarEnvio() {
   mostrarEstadoEnvio('enviando');
-  // Forzar popup desde un clic de usuario
-  try {
-    if (!msalInstance) {
-      msalInstance = new msal.PublicClientApplication({
-        auth: { clientId: MSAL_CLIENT_ID, authority: 'https://login.microsoftonline.com/' + MSAL_TENANT_ID, redirectUri: MSAL_REDIRECT },
-        cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
-      });
-    }
-    const r = await msalInstance.acquireTokenPopup({ scopes: FLOW_SCOPE });
-    const token = r.accessToken;
-    // Reconstruir payload con los datos actuales
-    const d = {
-      nombre:       document.getElementById('nombre').value,
-      fecha:        document.getElementById('fecha').value,
-      edad:         document.getElementById('edad').value,
-      sexo:         document.getElementById('sexo').value,
-      estadoCivil:  document.getElementById('ecivil').value,
-      escolaridad:  document.getElementById('escola').value,
-      profesion:    document.getElementById('prof').value,
-      empresa:      document.getElementById('empresa').value,
-      puntuacion:   document.getElementById('r-score').textContent,
-      nivel:        document.getElementById('r-nivel').textContent,
-      interpretacion: document.getElementById('r-desc').textContent
-    };
-    const resp = await fetch(PA_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ inputs: { text: JSON.stringify(d), escala: (escalaActual||'').toUpperCase() } })
-    });
-    mostrarEstadoEnvio(resp.ok || resp.status === 202 ? 'ok' : 'error');
-  } catch(err) {
-    console.error('Reintento fallido:', err);
-    mostrarEstadoEnvio('error');
-  }
+  const score  = document.getElementById('r-score').textContent;
+  const nivel  = document.getElementById('r-nivel').textContent;
+  const desc   = document.getElementById('r-desc').textContent;
+  const enviado = await enviarASharePoint({ score, nivel, desc });
+  mostrarEstadoEnvio(enviado ? 'ok' : 'error');
 }
 
 // Fecha hoy por defecto
