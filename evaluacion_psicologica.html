@@ -351,7 +351,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
 const MSAL_CLIENT_ID  = 'e846d541-a7cb-476b-adff-536906c0a117';
 const MSAL_TENANT_ID  = 'fc1fe5d8-2116-4f74-8354-3e86b8516bcf';
 const MSAL_REDIRECT   = 'https://diegocamach.github.io/evaluacion/evaluacion_psicologica.html';
-const FLOW_SCOPE      = ['https://service.flow.microsoft.com//.default'];
+const FLOW_SCOPE      = ['https://service.flow.microsoft.com/Flows.Read.All', 'https://service.flow.microsoft.com/Flows.Manage.All'];
 let msalInstance      = null;
 
 async function getFlowToken() {
@@ -912,8 +912,10 @@ async function enviarASharePoint(scoreData) {
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        text:   JSON.stringify(payload),
-        escala: escalaActual.toUpperCase()
+        inputs: {
+          text:   JSON.stringify(payload),
+          escala: escalaActual.toUpperCase()
+        }
       })
     });
 
@@ -999,7 +1001,7 @@ async function reintentarEnvio() {
     const resp = await fetch(PA_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ text: JSON.stringify(d), escala: (escalaActual||'').toUpperCase() })
+      body: JSON.stringify({ inputs: { text: JSON.stringify(d), escala: (escalaActual||'').toUpperCase() } })
     });
     mostrarEstadoEnvio(resp.ok || resp.status === 202 ? 'ok' : 'error');
   } catch(err) {
