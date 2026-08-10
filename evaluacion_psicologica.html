@@ -891,19 +891,19 @@ async function enviarASharePoint(scoreData) {
 
   const item = {
     __metadata: { type: 'SP.Data.Respuestas_x0020_EscalasListItem' },
-    Title:                          `${(escalaActual||'').toUpperCase()} — ${d.nombre} — ${d.fecha}`,
-    Escala:                         (escalaActual||'').toUpperCase(),
-    Nombre_x0020_Completo:          d.nombre,
-    Fecha_x0020_de_x0020_Aplicacion: d.fecha,
-    Edad:                           d.edad,
-    Sexo:                           d.sexo,
-    Estado_x0020_Civil:             d.ecivil,
-    Escolaridad:                    d.escola,
-    Profesion:                      d.prof,
-    Empresa:                        d.empresa,
-    Puntuacion_x0020_Total:         String(scoreData.score),
-    Nivel:                          scoreData.nivel,
-    Interpretacion:                 scoreData.desc
+    Title:            `${(escalaActual||'').toUpperCase()} — ${d.nombre} — ${d.fecha}`,
+    Escala:           (escalaActual||'').toUpperCase(),
+    NombreCompleto:   d.nombre,
+    FechadeAplicacion: d.fecha,
+    Edad:             d.edad,
+    Sexo:             d.sexo,
+    EstadoCivil:      d.ecivil,
+    Escolaridad:      d.escola,
+    Profesion:        d.prof,
+    Empresa:          d.empresa,
+    PuntuacionTotal:  String(scoreData.score),
+    Nivel:            scoreData.nivel,
+    Interpretacion:   scoreData.desc
   };
 
   try {
