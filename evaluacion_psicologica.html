@@ -119,8 +119,6 @@ input.err,select.err{border-color:var(--error)}
 
 footer{text-align:center;padding:18px;font-size:11px;color:var(--suave)}
 </style>
-<!-- MSAL.js para autenticación Microsoft -->
-<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 </head>
 <body>
 
@@ -276,32 +274,40 @@ footer{text-align:center;padding:18px;font-size:11px;color:var(--suave)}
 // ═══════════════════════════════════════
 // MSAL — AUTENTICACIÓN MICROSOFT
 // ═══════════════════════════════════════
-const MSAL_CONFIG = {
-  auth: {
-    clientId: 'e846d541-a7cb-476b-adff-536906c0a117',
-    authority: 'https://login.microsoftonline.com/fc1fe5d8-2116-4f74-8354-3e86b8516bcf',
-    redirectUri: 'https://diegocamach.github.io/evaluacion/evaluacion_psicologica.html'
-  },
-  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
-};
-let msalInstance = null;
-const FLOW_SCOPE = ['https://service.flow.microsoft.com//.default'];
+const MSAL_CLIENT_ID  = 'e846d541-a7cb-476b-adff-536906c0a117';
+const MSAL_TENANT_ID  = 'fc1fe5d8-2116-4f74-8354-3e86b8516bcf';
+const MSAL_REDIRECT   = 'https://diegocamach.github.io/evaluacion/evaluacion_psicologica.html';
+const FLOW_SCOPE      = ['https://service.flow.microsoft.com//.default'];
+let msalInstance      = null;
 
-window.addEventListener('DOMContentLoaded', () => {
-  msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
-});
+function loadMSAL() {
+  return new Promise((resolve, reject) => {
+    if (window.msal) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
 
 async function getFlowToken() {
-  if (!msalInstance) msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+  await loadMSAL();
+  if (!msalInstance) {
+    msalInstance = new msal.PublicClientApplication({
+      auth: { clientId: MSAL_CLIENT_ID, authority: 'https://login.microsoftonline.com/' + MSAL_TENANT_ID, redirectUri: MSAL_REDIRECT },
+      cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+    });
+  }
   const accounts = msalInstance.getAllAccounts();
   if (accounts.length > 0) {
     try {
-      const result = await msalInstance.acquireTokenSilent({ scopes: FLOW_SCOPE, account: accounts[0] });
-      return result.accessToken;
-    } catch (e) {}
+      const r = await msalInstance.acquireTokenSilent({ scopes: FLOW_SCOPE, account: accounts[0] });
+      return r.accessToken;
+    } catch(e) {}
   }
-  const result = await msalInstance.acquireTokenPopup({ scopes: FLOW_SCOPE });
-  return result.accessToken;
+  const r = await msalInstance.acquireTokenPopup({ scopes: FLOW_SCOPE });
+  return r.accessToken;
 }
 
 // ═══════════════════════════════════════
