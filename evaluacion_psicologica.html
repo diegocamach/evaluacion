@@ -354,23 +354,64 @@ const MSAL_REDIRECT   = 'https://diegocamach.github.io/evaluacion/evaluacion_psi
 const FLOW_SCOPE      = ['https://netorgft13019324.sharepoint.com/.default'];
 let msalInstance      = null;
 
-async function getFlowToken() {
+function getMsalInstance() {
   if (!msalInstance) {
     msalInstance = new msal.PublicClientApplication({
       auth: { clientId: MSAL_CLIENT_ID, authority: 'https://login.microsoftonline.com/' + MSAL_TENANT_ID, redirectUri: MSAL_REDIRECT },
-      cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+      cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true }
     });
   }
-  const accounts = msalInstance.getAllAccounts();
+  return msalInstance;
+}
+
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+async function getFlowToken() {
+  const instance = getMsalInstance();
+  // Manejar redirect de vuelta si aplica
+  try { await instance.handleRedirectPromise(); } catch(e) {}
+
+  const accounts = instance.getAllAccounts();
   if (accounts.length > 0) {
     try {
-      const r = await msalInstance.acquireTokenSilent({ scopes: FLOW_SCOPE, account: accounts[0] });
+      const r = await instance.acquireTokenSilent({ scopes: FLOW_SCOPE, account: accounts[0] });
       return r.accessToken;
     } catch(e) {}
   }
-  const r = await msalInstance.acquireTokenPopup({ scopes: FLOW_SCOPE });
-  return r.accessToken;
+
+  if (isMobile) {
+    // En móvil guardar datos pendientes y redirigir
+    sessionStorage.setItem('pendingScore', JSON.stringify({
+      score: document.getElementById('r-score')?.textContent,
+      nivel: document.getElementById('r-nivel')?.textContent,
+      desc:  document.getElementById('r-desc')?.textContent,
+      escala: escalaActual
+    }));
+    await instance.acquireTokenRedirect({ scopes: FLOW_SCOPE });
+    return null; // nunca llega aquí, redirige
+  } else {
+    const r = await instance.acquireTokenPopup({ scopes: FLOW_SCOPE });
+    return r.accessToken;
+  }
 }
+
+// Al cargar, verificar si hay un resultado pendiente de enviar tras redirect
+(async () => {
+  try {
+    const instance = getMsalInstance();
+    await instance.handleRedirectPromise();
+    const accounts = instance.getAllAccounts();
+    const pending = sessionStorage.getItem('pendingScore');
+    if (accounts.length > 0 && pending) {
+      sessionStorage.removeItem('pendingScore');
+      const p = JSON.parse(pending);
+      escalaActual = p.escala;
+      mostrarEstadoEnvio('enviando');
+      const enviado = await enviarASharePoint({ score: p.score, nivel: p.nivel, desc: p.desc });
+      mostrarEstadoEnvio(enviado ? 'ok' : 'error');
+    }
+  } catch(e) {}
+})();
 
 // ═══════════════════════════════════════
 // POWER AUTOMATE — CONFIGURACIÓN
